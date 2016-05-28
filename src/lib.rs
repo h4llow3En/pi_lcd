@@ -9,9 +9,6 @@ static RS_COMMAND: bool = false;
 static RS_DATA: bool = true;
 
 pub struct HD44780 {
-    //rs: PinOutput,
-    //e: PinOutput,
-    //data: Vec<PinOutput>,
     disp_rs: u32,
     disp_e: u32,
     datalines: [u32; 4],
@@ -29,14 +26,8 @@ impl HD44780 {
                disp_rows: u32)
                -> HD44780 {
         let raspi = CuPi::new().unwrap();
-        //let mut rs = raspi.pin(disp_rs as usize).unwrap().output();
-        //let mut e = raspi.pin(disp_e as usize).unwrap().output();
-        //let mut data: Vec<PinOutput> = Vec::new();
-        let lines: Vec<u8>;
 
-        //for x in 0..4 {
-        //    data[x] = raspi.pin(datalines[x] as usize).unwrap().output();
-        //}
+        let lines: Vec<u8>;
 
 
         match disp_rows {
@@ -63,21 +54,21 @@ impl HD44780 {
     }
 
     pub fn init(&self) {
-        HD44780::command(self, 0x33);
-        HD44780::command(self, 0x32);
-        HD44780::command(self, 0x28);
-        HD44780::command(self, 0x0C);
-        HD44780::command(self, 0x06);
-        HD44780::clean(self);
+        self.command(0x33);
+        self.command(0x32);
+        self.command(0x28);
+        self.command(0x0C);
+        self.command(0x06);
+        self.clean();
     }
     pub fn clean(&self) {
         // clean display
-        HD44780::command(self, 0x01);
+        self.command(0x01);
     }
 
     pub fn command(&self, bits: u8) {
         // send command
-        HD44780::send_byte(self, bits, RS_COMMAND);
+        self.send_byte(bits, RS_COMMAND);
     }
 
     pub fn send_string(&self, text: String, row: u32) {
@@ -104,7 +95,7 @@ impl HD44780 {
 
         self.command(CGRAM_ADDRESS | address << 3);
         for row in 0..bitmap.len() {
-            HD44780::send_byte(self, bitmap[row as usize], RS_DATA);
+            self.send_byte(bitmap[row as usize], RS_DATA);
         }
     }
 
@@ -114,13 +105,13 @@ impl HD44780 {
 
     fn select_row(&self, row: u32) {
         // select the row where the String should be printed at
-        HD44780::send_byte(self, self.lines[row as usize], RS_COMMAND);
+        self.send_byte(self.lines[row as usize], RS_COMMAND);
     }
 
     fn write(&self, charlist: Vec<u8>) {
         // send every single char to send_byte
         for x in charlist {
-            HD44780::send_byte(self, x, RS_DATA);
+            self.send_byte(x, RS_DATA);
         }
     }
 
