@@ -59,10 +59,10 @@ impl HD44780 {
         self.command(0x28);
         self.command(0x0C);
         self.command(0x06);
-        self.clean();
+        self.clear();
     }
-    pub fn clean(&self) {
-        // clean display
+    pub fn clear(&self) {
+        // clear display
         self.command(0x01);
     }
 
