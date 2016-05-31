@@ -15,7 +15,7 @@ pi_lcd is a Rust Crate to connect a HD44780 LCD to your Raspberry Pi.
 ## Example
 
 ```rust
-use extern pi_lcd;
+use pi_lcd::*;
 
 // create a new lcd
 let lcd = HD44780::new(11,10,[6,5,4,1],20,4);
@@ -27,7 +27,7 @@ lcd.send_string("Hello World".to_string(),0);
 
 ## Usage & Documentation
 
-Coming soon...
+An online version of the documentation can be found [here](http://h4llow3en.github.io/pi_lcd/pi_lcd/)
 
 ## License
 This work is licensed under the _MIT_ license. See `LICENSE` for more information.
