@@ -1,24 +1,41 @@
-#![allow(deprecated)]
+//! A Rust crate to connect a HD44780 lcd display
+//!
+//! # Example
+//! ```
+//! use extern pi_lcd;
+//!
+//! // create a new lcd
+//! let lcd = HD44780::new(11,10,[6,5,4,1],20,4);
+//!
+//! // send a String to the lcd at row 0
+//! lcd.send_string("Hello World".to_string(),0);
+//! ```
+
 extern crate cupi;
 
-use cupi::*;
+use cupi::{CuPi, PinOutput, DigitalWrite};
 use std::time::Duration;
+use std::cell::RefCell;
 
 static CGRAM_ADDRESS: u8 = 0x40;
-static RS_COMMAND: bool = false;
-static RS_DATA: bool = true;
+static COMMAND: bool = false;
+static DATA: bool = true;
 
+/// The display handle
 pub struct HD44780 {
-    disp_rs: u32,
-    disp_e: u32,
-    datalines: [u32; 4],
-    raspi: CuPi,
+    rs: RefCell<PinOutput>,
+    e: RefCell<PinOutput>,
+    data: Vec<RefCell<PinOutput>>,
     cols: u32,
     rows: u32,
     lines: Vec<u8>,
 }
 
 impl HD44780 {
+    /// Creates a new HD44780 instance with `disp_rs` as rs pin, `disp_e` as enabled pin, `datalines` as data4 to data7
+    ///
+    /// `disp_cols` are the number of columns
+    /// `disp_rows` are the number of rows
     pub fn new(disp_rs: u32,
                disp_e: u32,
                datalines: [u32; 4],
@@ -26,6 +43,12 @@ impl HD44780 {
                disp_rows: u32)
                -> HD44780 {
         let raspi = CuPi::new().unwrap();
+        let rs = RefCell::new(raspi.pin(disp_rs as usize).unwrap().output());
+        let e = RefCell::new(raspi.pin(disp_e as usize).unwrap().output());
+        let mut data: Vec<RefCell<PinOutput>> = Vec::new();
+        for x in 0..4 {
+            data.push(RefCell::new(raspi.pin(datalines[x] as usize).unwrap().output()));
+        }
 
         let lines: Vec<u8>;
 
@@ -39,10 +62,9 @@ impl HD44780 {
         };
 
         let result = HD44780 {
-            disp_rs: disp_rs,
-            disp_e: disp_e,
-            datalines: datalines,
-            raspi: raspi,
+            rs: rs,
+            e: e,
+            data: data,
             cols: disp_cols,
             rows: disp_rows,
             lines: lines,
@@ -53,6 +75,7 @@ impl HD44780 {
         result
     }
 
+    /// Initializes the display and clears it
     pub fn init(&self) {
         self.command(0x33);
         self.command(0x32);
@@ -61,18 +84,20 @@ impl HD44780 {
         self.command(0x06);
         self.clear();
     }
+
+    /// Clears the display
     pub fn clear(&self) {
-        // clear display
         self.command(0x01);
     }
 
+    /// Sends a given byte as a command
     pub fn command(&self, bits: u8) {
         // send command
-        self.send_byte(bits, RS_COMMAND);
+        self.send_byte(bits, COMMAND);
     }
 
+    /// Parses a String and and outputs it to the given row
     pub fn send_string(&self, text: String, row: u32) {
-        // prepare String to write it to the LCD
         let mut message: Vec<u8> = Vec::new();
         let col = self.cols;
         let row = row % self.rows;
@@ -89,84 +114,84 @@ impl HD44780 {
         self.write(message);
     }
 
-    pub fn create_char(&self, address: u8, bitmap: [u8; 8]) {
-        // TODO: Check for address in range 0..8
+    /// Creates a new custom character from a bitmap on the given `address`
+    pub fn create_char(&self, address: u8, bitmap: [u8; 8]) -> Result<u8, &'static str> {
         // send new custom character to cgram address
-
-        self.command(CGRAM_ADDRESS | address << 3);
-        for row in 0..bitmap.len() {
-            self.send_byte(bitmap[row as usize], RS_DATA);
+        match address {
+            0...7 => {
+                self.command(CGRAM_ADDRESS | address << 3);
+                for row in &bitmap {
+                    self.send_byte(bitmap[*row as usize], DATA);
+                }
+                Ok(address)
+            },
+            _ => Err("address must be between 0 and 7"),
         }
-    }
 
-    fn e_wait() {
-        std::thread::sleep(Duration::new(0, 50));
     }
 
     fn select_row(&self, row: u32) {
         // select the row where the String should be printed at
-        self.send_byte(self.lines[row as usize], RS_COMMAND);
+        self.send_byte(self.lines[row as usize], COMMAND);
     }
 
     fn write(&self, charlist: Vec<u8>) {
         // send every single char to send_byte
         for x in charlist {
-            self.send_byte(x, RS_DATA);
+            self.send_byte(x, DATA);
         }
     }
 
     fn send_byte(&self, bits: u8, mode: bool) {
-        let mut rs = self.raspi.pin(self.disp_rs as usize).unwrap().output();
-        let mut e = self.raspi.pin(self.disp_e as usize).unwrap().output();
-        let mut data: Vec<PinOutput> = Vec::new();
-        for x in 0..4 {
-            data.push(self.raspi.pin(self.datalines[x] as usize).unwrap().output());
-        }
-
         if mode {
-            rs.high().unwrap();
+            self.rs.borrow_mut().high().unwrap();
         } else {
-            rs.low().unwrap();
+            self.rs.borrow_mut().low().unwrap();
         }
-        data[0].low().unwrap();
-        data[1].low().unwrap();
-        data[2].low().unwrap();
-        data[3].low().unwrap();
+        self.data[0].borrow_mut().low().unwrap();
+        self.data[1].borrow_mut().low().unwrap();
+        self.data[2].borrow_mut().low().unwrap();
+        self.data[3].borrow_mut().low().unwrap();
         if bits & 0x10 == 0x10 {
-            data[0].high().unwrap();
+            self.data[0].borrow_mut().high().unwrap();
         }
         if bits & 0x20 == 0x20 {
-            data[1].high().unwrap();
+            self.data[1].borrow_mut().high().unwrap();
         }
         if bits & 0x40 == 0x40 {
-            data[2].high().unwrap();
+            self.data[2].borrow_mut().high().unwrap();
         }
         if bits & 0x80 == 0x80 {
-            data[3].high().unwrap();
+            self.data[3].borrow_mut().high().unwrap();
         }
-        HD44780::e_wait();
-        e.high().unwrap();
-        HD44780::e_wait();
-        e.low().unwrap();
-        data[0].low().unwrap();
-        data[1].low().unwrap();
-        data[2].low().unwrap();
-        data[3].low().unwrap();
+        e_wait();
+        self.e.borrow_mut().high().unwrap();
+        e_wait();
+        self.e.borrow_mut().low().unwrap();
+        self.data[0].borrow_mut().low().unwrap();
+        self.data[1].borrow_mut().low().unwrap();
+        self.data[2].borrow_mut().low().unwrap();
+        self.data[3].borrow_mut().low().unwrap();
         if bits & 0x01 == 0x01 {
-            data[0].high().unwrap();
+            self.data[0].borrow_mut().high().unwrap();
         }
         if bits & 0x02 == 0x02 {
-            data[1].high().unwrap();
+            self.data[1].borrow_mut().high().unwrap();
         }
         if bits & 0x04 == 0x04 {
-            data[2].high().unwrap();
+            self.data[2].borrow_mut().high().unwrap();
         }
         if bits & 0x08 == 0x08 {
-            data[3].high().unwrap();
+            self.data[3].borrow_mut().high().unwrap();
         }
-        HD44780::e_wait();
-        e.high().unwrap();
-        HD44780::e_wait();
-        e.low().unwrap();
+        e_wait();
+        self.e.borrow_mut().high().unwrap();
+        e_wait();
+        self.e.borrow_mut().low().unwrap();
     }
+}
+
+/// Waits 50 ns to let the display recognize the enabled pin
+pub fn e_wait() {
+    std::thread::sleep(Duration::new(0, 50));
 }
