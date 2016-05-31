@@ -1,8 +1,8 @@
 //! A Rust crate to connect a HD44780 lcd display
 //!
 //! # Example
-//! ```
-//! use extern pi_lcd;
+//! ```no_run
+//! use pi_lcd::*;
 //!
 //! // create a new lcd
 //! let lcd = HD44780::new(11,10,[6,5,4,1],20,4);
