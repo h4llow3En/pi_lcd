@@ -9,7 +9,7 @@ pi_lcd is a Rust Crate to connect a HD44780 LCD to your Raspberry Pi.
 ![pin26](https://cloud.githubusercontent.com/assets/6068259/15632138/ff3d1de2-2588-11e6-9064-504d2a9d3277.png)
 
 #### Raspberry Pi with 26 Pins (A+, B+, Pi2 B)
-![pin40](https://cloud.githubusercontent.com/assets/6068259/15632142/414e5a5c-2589-11e6-9334-952462516ff3.png)
+![pin40](https://cloud.githubusercontent.com/assets/6068259/15666295/55cfc91a-2710-11e6-9c7c-4ba529680d9b.png)
 
 ## Examples
 
