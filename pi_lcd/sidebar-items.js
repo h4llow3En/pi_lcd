@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["e_wait","Waits 50 ns to let the display recognize the enabled pin"]],"struct":[["HD44780","The display handle"]]});

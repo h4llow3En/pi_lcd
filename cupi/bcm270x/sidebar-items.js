@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["GPIOClockRegister",""],["GPIOFunctionSelect",""],["GPIORegister",""],["PWMRegister",""],["PullUpDnControl",""],["SystemTimerRegister",""]],"struct":[["BCM2708",""],["BCM2709",""],["GPIO",""],["PinInput",""],["PinOptions",""],["PinOutput",""]],"trait":[["PeripheralsBase",""]]});
