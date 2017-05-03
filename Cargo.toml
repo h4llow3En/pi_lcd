@@ -4,4 +4,5 @@ version = "0.1.0"
 authors = ["h4llow3En <mail@felixdoering.com>"]
 
 [dependencies]
-cupi = "0.1.0"
+regex = "0.2.1"
+cupi = { git = "https://github.com/inre/cupi.git"}

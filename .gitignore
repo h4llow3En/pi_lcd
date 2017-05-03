@@ -1,5 +1,7 @@
 target
 Cargo.lock
+.texpadtmp/
+*.pdf
 .cache/
 .vagrant/
 Vagrantfile

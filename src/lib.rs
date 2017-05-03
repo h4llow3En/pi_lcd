@@ -12,10 +12,13 @@
 //! ```
 
 extern crate cupi;
+extern crate regex;
 
 use cupi::{CuPi, PinOutput, DigitalWrite};
 use std::time::Duration;
 use std::cell::RefCell;
+use regex::Regex;
+
 
 static CGRAM_ADDRESS: u8 = 0x40;
 static COMMAND: bool = false;
@@ -92,12 +95,12 @@ impl HD44780 {
 
     /// Sends a given byte as a command
     pub fn command(&self, bits: u8) {
-        // send command
         self.send_byte(bits, COMMAND);
     }
 
     /// Parses a String and and outputs it to the given row
     pub fn send_string(&self, text: String, row: u32) {
+        let re_char: Regex = Regex::new(r"^\\cg:([0-7])").unwrap();
         let mut message: Vec<u8> = Vec::new();
         let col = self.cols;
         let row = row % self.rows;
